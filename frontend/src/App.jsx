@@ -1,17 +1,16 @@
 import "./App.css";
+import Footer from "./Components/Footer/Footer";
 import Navbar from "./Components/Navbar/Navbar";
 import { BrowserRouter } from "react-router-dom";
 
 
 function App() {
   return (
-  // <h1 className="text-4xl font-bold underline text-red-500">
-  //   Hello world!
-  //   </h1>
   <BrowserRouter>
       <Navbar />
+      <Footer />
   </BrowserRouter>
-    )
+    );
 }
 
 export default App;
