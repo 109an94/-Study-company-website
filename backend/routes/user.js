@@ -47,7 +47,7 @@ router.post("/login", async (req, res) => {
 
     if (!user) {
       //유저가 없으면?
-      return res.status("401").json({ message: "사용자를 찾을 수 없습니다." });
+      return res.status(401).json({ message: "사용자를 찾을 수 없습니다." });
     }
 
     if (!user.isActive) {
@@ -79,7 +79,7 @@ router.post("/login", async (req, res) => {
       await user.save(); //db에 실시간 업데이트
       return res.status(401).json({
         message: "비밀번호가 올바르지 않습니다.",
-        remainingAttempt: 5 - user.failedLoginAttempts,
+        remainingAttempts: 5 - user.failedLoginAttempts,
       }); //비밀번호 틀렸을 때
     }
 
@@ -154,7 +154,7 @@ router.post("/logout", async (req, res) => {
       httpOnly: true,
       secure: false,
       sameSite: "strict", //크로스 사이트 요청 제한
-    }); 
+    });
 
     res.json({ message: "로그아웃 되었습니다." });
     //express에서 쿠키를 못 읽어서 cookie-parser 설치
@@ -164,19 +164,33 @@ router.post("/logout", async (req, res) => {
   }
 });
 
-
 router.delete("/delete/:userId", async (req, res) => {
-    try {
-        //몽고db에서 사용자 삭제 하는 스키마가 있음
-        const user = await User.findByIdAndDelete(req.params.userId); //url 파라미터로 userId를 받아서 삭제
-        if (!user) {
-            return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-        }
-        res.json({ message: "사용자가 성공적으로 삭제되었습니다." });
-    } catch (error) {
-        res.status(500).json({ message: "서버 오류가 발생했습니다." });
+  try {
+    //몽고db에서 사용자 삭제 하는 스키마가 있음
+    const user = await User.findByIdAndDelete(req.params.userId); //url 파라미터로 userId를 받아서 삭제
+    if (!user) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
     }
+    res.json({ message: "사용자가 성공적으로 삭제되었습니다." });
+  } catch (error) {
+    res.status(500).json({ message: "서버 오류가 발생했습니다." });
+  }
 });
+
+
+router.post("/verify-token", (req,res)=>{
+  const token = req.cookies.token;
+  if(!token){
+    return res.status(400).json({ isVailed: false , message: "토큰이 없습니다."});
+  }
+
+  try {
+    const decoded = jwt.verify(token,process.env.JWT_SECRET)
+    return res.status(200).json({ isValied: true, user:decoded})
+  } catch (error) {
+    return res.status(400).json({isVailed:false, message: "토큰이 유효하지 않습니다."});
+  }
+})
 
 //라우터를 외부로 추출
 module.exports = router; //-> indexjs로 이동

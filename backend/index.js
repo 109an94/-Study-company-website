@@ -5,10 +5,15 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser"); //쿠키 파서 설치
+const cors = require("cors");
 
 const app = express();
 const PORT = 3001;
-
+//cors 추가하게 됨
+app.use(cors({
+  origin: "http://localhost:5173", //프론트엔드 주소
+  credentials: true //프론트에서 백으로 쿠키를 보낼 수 있게 해줌
+}))
 
 
 //json을 해석할 수 있는 기능이 없어 500에러 발생, 따라서 npm 설치 = 

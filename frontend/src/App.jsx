@@ -1,7 +1,7 @@
 import "./App.css";
 import Footer from "./Components/Footer/Footer";
 import Navbar from "./Components/Navbar/Navbar";
-
+import React, { useEffect, useState } from "react";
 
 import MainPage from "./Pages/MainPage/MainPage";
 import About from "./Pages/About/About";
@@ -11,9 +11,39 @@ import Services from "./Pages/Services/Services";
 import Contact from "./Pages/Contact/Contact";
 
 import AdminLogin from "./Pages/Admin/AdminLogin";
+import AdminPosts from "./Pages/Admin/AdminPosts";
+
 
 // import { BrowserRouter } from "react-router-dom";
-import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from "react-router-dom";
+
+
+function AuthRedirectRoute(){
+  const [isAutenticated, setIsAuthenticated] = useState(null); 
+  useEffect(()=>{
+    const verifyToken = async()=>{
+      try {
+        const response = await axios.post("http://localhost:3001/api/auth/verify-token",
+          {}, 
+          { withCredentials: true }
+        );
+        setIsAuthenticated(true);
+      } catch(error){
+        console.log("토큰 인증 실패: ", error);
+        setIsAuthenticated(false);
+      }
+    };
+    verifyToken();
+  },[]); //상태 변화가 일어나기 때문에 useeffect 를 사용
+  //function이 끝나기 전에 null이면 함수 종료하도록
+  if(isAutenticated === null){
+    return null;
+  }
+  return isAutenticated ? <Navigate to="/admin/posts" replace/> : <Outlet/>;
+  //이전 페이지로 못 돌아가게 replace 사용
+  //실패하면 outlet써서 다시 로그인 페이지로 이동 됨
+}
+
 //리액트라우터 돔 사용 BrowserRouter -> createrbrowserrouter routerprovider outlet을 사용
 //BrowserRouter는 라우터를 감싸주는 역할
 //라우터란 무엇인가? 사용자가 요청한 URL에 따라 적절한 컴포넌트를 렌더링해주는 역할
@@ -26,6 +56,15 @@ function Layout() {
       <Navbar />
       <Outlet />
       <Footer />
+    </>
+  );
+}
+
+function AdminLayout() {
+  return (
+    <>
+      <AdminNavbar />
+      <Outlet />
     </>
   );
 }
@@ -63,7 +102,19 @@ const router = createBrowserRouter([
   },
   {//새로운 루트 추가
     path: "/admin",
-    element: <AdminLogin/>
+    element: <AuthRedirectRoute/> ,
+    //토큰을 가진 상태에서 ADMINLOGIN되면 자동 POSTS로 리다이렉트 되도록 함
+    children:[{index: true, element:<AdminLogin/>}]
+  },
+  {
+    path: "/admin",
+    element: <AdminLayout/>,
+    children:[
+      {
+        path: "posts",
+        element: <AdminPosts/>
+      }
+    ]
   }
 ])
 
