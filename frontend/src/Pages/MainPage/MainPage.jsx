@@ -1,6 +1,6 @@
 import React from 'react'
 import Hero from './Hero'
-import Contact from '../Contact/Contact'
+import Contact from './Contact'
 import Forum from './Forum'
 //메인페이지 안에 컴포넌트 3개 들어갈 예정
 //근데 재사용할 일이 없어서 컴포넌트를 안만들고 그냥 jsx로 페이지를 만들 예정
@@ -13,8 +13,8 @@ const MainPage = () => {
   return (
     <div>
       <Hero/>
-      <Contact/>
       <Forum/>
+      <Contact/>
     </div>
   )
 }
