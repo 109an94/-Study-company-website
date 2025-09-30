@@ -9,6 +9,9 @@ import Leadership from "./Pages/Leadership/Leadership";
 import Board from "./Pages/Board/Board";
 import Services from "./Pages/Services/Services";
 import Contact from "./Pages/Contact/Contact";
+
+import AdminLogin from "./Pages/Admin/AdminLogin";
+
 // import { BrowserRouter } from "react-router-dom";
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 //리액트라우터 돔 사용 BrowserRouter -> createrbrowserrouter routerprovider outlet을 사용
@@ -57,6 +60,10 @@ const router = createBrowserRouter([
         element: <Contact/>
       }
     ]
+  },
+  {//새로운 루트 추가
+    path: "/admin",
+    element: <AdminLogin/>
   }
 ])
 
