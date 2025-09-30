@@ -1,6 +1,7 @@
 import "./App.css";
 import Footer from "./Components/Footer/Footer";
 import Navbar from "./Components/Navbar/Navbar";
+import AdminNavbar from "./Components/AdminNavbar/AdminNavbar";
 import React, { useEffect, useState } from "react";
 
 import MainPage from "./Pages/MainPage/MainPage";
@@ -12,7 +13,9 @@ import Contact from "./Pages/Contact/Contact";
 
 import AdminLogin from "./Pages/Admin/AdminLogin";
 import AdminPosts from "./Pages/Admin/AdminPosts";
-
+import AdminCreatePost from "./Pages/Admin/AdminCreatePost";
+import AdminEditPost from "./Pages/Admin/AdminEditPost";
+import AdminContacts from "./Pages/Admin/AdminContacts";
 
 // import { BrowserRouter } from "react-router-dom";
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from "react-router-dom";
@@ -31,6 +34,7 @@ function AuthRedirectRoute(){
       } catch(error){
         console.log("토큰 인증 실패: ", error);
         setIsAuthenticated(false);
+        //일단 로그아웃하면 자연스럽게 에러처리나오게됨
       }
     };
     verifyToken();
@@ -113,7 +117,20 @@ const router = createBrowserRouter([
       {
         path: "posts",
         element: <AdminPosts/>
-      }
+      },
+      {
+        path: "create-post",
+        element: <AdminCreatePost/>
+      },
+      {
+        path: "edit-posts",
+        element: <AdminEditPost/>
+      },
+      {
+        path: "contacts",
+        element: <AdminContacts/>
+      },
+
     ]
   }
 ])
