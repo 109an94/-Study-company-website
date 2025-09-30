@@ -88,13 +88,15 @@ router.post("/login", async (req, res) => {
     user.lastLoginAttempt = new Date();
     user.isLoggedIn = true; //로그인 상태 true로 변경
     //+ip 어드레스도 저장하기 -> axios패키지를 활용
-    try {
-      const response = await axios.get("https://api.ipify.org?format=json");
-      const ipAddress = response.data.ip;
-      user.ipAddress = ipAddress; //ip어드레스 저장
-    } catch (error) {
-      console.log("IP 주소를 가져오는 중 오류 발생: ", error.message);
-    }
+
+    //잠깐 주석처리
+    // try {
+    //   const response = await axios.get("https://api.ipify.org?format=json");
+    //   const ipAddress = response.data.ip;
+    //   user.ipAddress = ipAddress; //ip어드레스 저장
+    // } catch (error) {
+    //   console.log("IP 주소를 가져오는 중 오류 발생: ", error.message);
+    // }
 
     await user.save(); //db에 실시간 업데이트
 
@@ -109,7 +111,7 @@ router.post("/login", async (req, res) => {
     //토큰을 클라이언트 쿠키에 저장
     res.cookie("token", token, {
       httpOnly: true, //자바스크립트에서 쿠키 접근 불가
-      secure: false, //https 환경에서만 쿠키 전송
+      secure: "production", //https 환경에서만 쿠키 전송
       sameSite: "strict", //크로스 사이트 요청 제한
       maxAge: 24 * 60 * 60 * 1000, //24시간
     });
@@ -152,7 +154,7 @@ router.post("/logout", async (req, res) => {
     //쿠키 삭제
     res.clearCookie("token", {
       httpOnly: true,
-      secure: false,
+      secure: "production",
       sameSite: "strict", //크로스 사이트 요청 제한
     });
 
@@ -188,7 +190,7 @@ router.post("/verify-token", (req,res)=>{
     const decoded = jwt.verify(token,process.env.JWT_SECRET)
     return res.status(200).json({ isValied: true, user:decoded})
   } catch (error) {
-    return res.status(400).json({isVailed:false, message: "토큰이 유효하지 않습니다."});
+    return res.status(401).json({isVailed:false, message: "토큰이 유효하지 않습니다."});
   }
 })
 

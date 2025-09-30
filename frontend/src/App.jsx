@@ -3,6 +3,12 @@ import Footer from "./Components/Footer/Footer";
 import Navbar from "./Components/Navbar/Navbar";
 import AdminNavbar from "./Components/AdminNavbar/AdminNavbar";
 import React, { useEffect, useState } from "react";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Outlet,
+  Navigate,
+} from "react-router-dom";
 
 import MainPage from "./Pages/MainPage/MainPage";
 import About from "./Pages/About/About";
@@ -17,41 +23,82 @@ import AdminCreatePost from "./Pages/Admin/AdminCreatePost";
 import AdminEditPost from "./Pages/Admin/AdminEditPost";
 import AdminContacts from "./Pages/Admin/AdminContacts";
 
+import axios from "axios";
+
 // import { BrowserRouter } from "react-router-dom";
-import { createBrowserRouter, RouterProvider, Outlet, Navigate } from "react-router-dom";
 
 
-function AuthRedirectRoute(){
-  const [isAutenticated, setIsAuthenticated] = useState(null); 
-  useEffect(()=>{
-    const verifyToken = async()=>{
+function AuthRedirectRoute() {
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  useEffect(() => {
+    const verifyToken = async () => {
       try {
-        const response = await axios.post("http://localhost:3001/api/auth/verify-token",
-          {}, 
+        const response = await axios.post(
+          "http://localhost:3001/api/auth/verify-token",
+          {},
           { withCredentials: true }
         );
         setIsAuthenticated(true);
-      } catch(error){
+      } catch (error) {
         console.log("토큰 인증 실패: ", error);
         setIsAuthenticated(false);
         //일단 로그아웃하면 자연스럽게 에러처리나오게됨
       }
     };
     verifyToken();
-  },[]); //상태 변화가 일어나기 때문에 useeffect 를 사용
+  }, []); //상태 변화가 일어나기 때문에 useeffect 를 사용
   //function이 끝나기 전에 null이면 함수 종료하도록
-  if(isAutenticated === null){
+  if (isAuthenticated === null) {
     return null;
   }
-  return isAutenticated ? <Navigate to="/admin/posts" replace/> : <Outlet/>;
+  return isAuthenticated ? <Navigate to="/admin/posts" replace /> : <Outlet />;
   //이전 페이지로 못 돌아가게 replace 사용
   //실패하면 outlet써서 다시 로그인 페이지로 이동 됨
 }
 
+function ProtectedRoute() {
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [user, setUser] = useState(null);//초기상태
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:3001/api/auth/verify-token",
+          {},
+          { withCredentials: true }
+        );
+        setIsAuthenticated(response.data.isValied); //true가 아닌 response의 반환값 넣어줌
+        setUser(response.data.user); //유저 정보 상태에 업데이트
+      } catch (error) {
+        console.log("토큰 인증 실패: ", error);
+        setIsAuthenticated(false);
+        //일단 로그아웃하면 자연스럽게 에러처리나오게됨
+        setUser(null); //유저 정보 초기화 왜? 인증 실패했기 때문에
+      }
+    };
+    verifyToken();
+  }, []); //상태 변화가 일어나기 때문에 useeffect 를 사용
+  //function이 끝나기 전에 null이면 함수 종료하도록
+  if (isAuthenticated === null) {
+    return null;
+  }
+   return isAuthenticated ? (
+    <Outlet context={{ user }} />
+  ) : (
+    <Navigate to="/admin" replace />
+  )
+  //참이면 계속 진행, false면 로그인 페이지로 이동
+  //이전 페이지로 못 돌아가게 replace 사용
+}
+
+
+
+
 //리액트라우터 돔 사용 BrowserRouter -> createrbrowserrouter routerprovider outlet을 사용
 //BrowserRouter는 라우터를 감싸주는 역할
 //라우터란 무엇인가? 사용자가 요청한 URL에 따라 적절한 컴포넌트를 렌더링해주는 역할
-//createrbrowserrouter는 라우팅 경로를 생성하는 역할 
+//createrbrowserrouter는 라우팅 경로를 생성하는 역할
 //routerprovider는 라우터를 제공하는 역할
 //outlet은 라우터의 자식 컴포넌트를 렌더링하는 역할.
 function Layout() {
@@ -63,6 +110,9 @@ function Layout() {
     </>
   );
 }
+
+
+
 
 function AdminLayout() {
   return (
@@ -76,64 +126,69 @@ function AdminLayout() {
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout/>,
+    element: <Layout />,
     children: [
       {
         index: true,
-        element: <MainPage/>
+        element: <MainPage />,
       },
       {
         path: "/about",
-        element: <About/>
+        element: <About />,
       },
       {
         path: "/leadership",
-        element: <Leadership/>
+        element: <Leadership />,
       },
       {
         path: "/board",
-        element: <Board/>
+        element: <Board />,
       },
       {
         path: "/our-services",
-        element: <Services/>
+        element: <Services />,
       },
       {
         path: "/contact",
-        element: <Contact/>
-      }
-    ]
+        element: <Contact />,
+      },
+    ],
   },
-  {//새로운 루트 추가
+  {
+    //새로운 루트 추가
     path: "/admin",
-    element: <AuthRedirectRoute/> ,
+    element: <AuthRedirectRoute />,
     //토큰을 가진 상태에서 ADMINLOGIN되면 자동 POSTS로 리다이렉트 되도록 함
-    children:[{index: true, element:<AdminLogin/>}]
+    children: [{ index: true, element: <AdminLogin /> }],
   },
   {
     path: "/admin",
-    element: <AdminLayout/>,
-    children:[
+    element: <ProtectedRoute />,
+    children: [
       {
-        path: "posts",
-        element: <AdminPosts/>
+        element: <AdminLayout />, //admin/하위 경로 접근을 막기위해 protectedroute로 감싸줌
+        children: [
+          {
+            path: "posts",
+            element: <AdminPosts />,
+          },
+          {
+            path: "create-post",
+            element: <AdminCreatePost />,
+          },
+          {
+            path: "edit-post/:id",
+            element: <AdminEditPost />,
+          },
+          {
+            path: "contacts",
+            element: <AdminContacts />,
+          },
+        ],
       },
-      {
-        path: "create-post",
-        element: <AdminCreatePost/>
-      },
-      {
-        path: "edit-posts",
-        element: <AdminEditPost/>
-      },
-      {
-        path: "contacts",
-        element: <AdminContacts/>
-      },
-
-    ]
-  }
-])
+    ],
+  },
+]);
 
 function App() {
   // return (
@@ -143,7 +198,7 @@ function App() {
   // </BrowserRouter>
   //   );
   // app 수정해서 라우터 프로아비더로 변경
-  return <RouterProvider router={router}/>;
+  return <RouterProvider router={router} />;
 }
 // /경로에 사용자가 접근하면 layout이 랜더링 되면서 보여지게 됨
 // 그럼 네비, 아울렛, 푸터가 보이게 됨
