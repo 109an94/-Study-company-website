@@ -49,7 +49,7 @@ const router = createBrowserRouter([
         element: <Board/>
       },
       {
-        path: "/our-service",
+        path: "/our-services",
         element: <Services/>
       },
       {
