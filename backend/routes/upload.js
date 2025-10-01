@@ -34,7 +34,7 @@ const verifyToken = (req, res, next) => {
   }
   next();
 };
-
+//이미지 라우터
 router.post(
   "/image",
   verifyToken,
@@ -66,6 +66,7 @@ router.post(
   }
 );
 
+//파일라우터
 router.post(
   "/file",
   verifyToken,
@@ -73,13 +74,13 @@ router.post(
   async (req, res) => {
     try {
       const file = req.file; //파일이 .jpg, .png 등 확장자명을 받아서 split으로 나눔
-      const originalname= req.body.originalname; //원본파일이름 보존
+      const originalname= req.file.originalname; //원본파일이름 보존
       const decodedfileName = decodeURIComponent(originalname);//오리지널 네임이 url인코딩된 상태 일수도 있어서 원래 문자열로 변환
 
 
       const uploadParams = {
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `post-files/${fileName}`, //post-images 폴더에 저장
+        Key: `post-files/${decodedfileName}`, //post-images 폴더에 저장
         Body: file.buffer,
         ContentType: file.mimetype,
         ContentDisposition: `attchment; filename*=UTF-8''${encodeURIComponent(decodedfileName)}`, //다운로드시 원본파일이름으로 저장되도록
@@ -88,7 +89,7 @@ router.post(
       const command = new PutObjectCommand(uploadParams);
       await s3Client.send(command);
 
-      const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/post-images/${decodedfileName}`;
+      const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/post-files/${decodedfileName}`;
       res.json({ fileUrl });
     } catch (error) {
       console.log("파일 업로드 오류: ", error);
