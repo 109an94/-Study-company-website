@@ -9,6 +9,12 @@ const cors = require("cors");
 
 const app = express();
 const PORT = 3001;
+
+const userRoutes = require("./routes/user");//이거 순서문제였당
+const postRoutes = require.main.require("./routes/post");
+const uploadRoutes = require("./routes/upload");
+
+
 //cors 추가하게 됨
 app.use(cors({
   origin: "http://localhost:5173", //프론트엔드 주소
@@ -22,12 +28,12 @@ app.use(express.json());
 app.use(express.urlencoded());
 app.use(cookieParser()); //쿠키 파서 설치
 
-const userRoutes = require("./routes/user.js");//이거 순서문제였당
 app.use("/api/auth",userRoutes); // /user/signup -> /api/auth/signup 로 변경
+app.use("/api/post",postRoutes); 
 //미들웨어 등록, json형태로 된 요청 바디를 파싱
 //사용자가 3001번에 signup으로 post요청하면 index에서 요청이 도착하는데 api/auth라는 url을 인식한 뒤 userRoutes를 호출
 //임시테스트 확장프로그램 thunder client 설치
-
+app.use("/api/upload",uploadRoutes);
 
 
 app.get("/", (req, res) => {
