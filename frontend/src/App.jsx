@@ -16,6 +16,7 @@ import Leadership from "./Pages/Leadership/Leadership";
 import Board from "./Pages/Board/Board";
 import Services from "./Pages/Services/Services";
 import Contact from "./Pages/Contact/Contact";
+import SinglePost from "./Pages/SinglePost/SinglePost";
 
 import AdminLogin from "./Pages/Admin/AdminLogin";
 import AdminPosts from "./Pages/Admin/AdminPosts";
@@ -143,6 +144,10 @@ const router = createBrowserRouter([
       {
         path: "/board",
         element: <Board />,
+      },
+      {
+        path: "/post/:id",
+        element: <SinglePost />,
       },
       {
         path: "/our-services",

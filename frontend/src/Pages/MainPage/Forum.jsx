@@ -111,7 +111,7 @@ const Forum = () => {
                   className="border-b border-gray-100 last:border-b-0 hover:bg-blue-50 transition-colors duration-300"
                 >
                   {/* 링크 하나 더 만들기 - 게시물 클릭했을 때 신규페이지로 */}
-                  <Link to ={`/board/${post._id}`} className='block'/>
+                  <Link to ={`/post/${post._id}`} className='block'>
                   <div className="p-6 flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-4 mb-2">
@@ -151,6 +151,7 @@ const Forum = () => {
                       </svg>
                     </div>
                   </div>
+                  </Link>
                 </div>
               ))
             )}
