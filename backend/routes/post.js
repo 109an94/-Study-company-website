@@ -126,6 +126,7 @@ router.put("/:id", async (req, res) => {
       /https:\/\/[^"']*?\.(?:png|jpg|jpeg|gif|PNG|JPG|JPEG|GIF)/g;
       //원본 게시물의 콘텐츠와 새로운 콘텐츠에서 이미지 URL 추출
       const oldContentImages = post.content.match(imgRegex) || [];
+
     const newContentImages = content.match(imgRegex) || [];
     //삭제된 이미지 필터링
     //기존 콘텐츠에는 있지만 새로운 콘텐츠에는 없는 이미지 URL 찾기
@@ -204,7 +205,7 @@ router.delete("/:id", async (req, res) => {
     }
 
 
-    const allFiles = [...deletedImages, ...(post.fileUrl || [])]; //게시물에 포함된 모든 이미지와 파일 URL
+    const allFiles = [...contentImages, ...(post.fileUrl || [])]; //게시물에 포함된 모든 이미지와 파일 URL
     for(const fileUrl of allFiles){
       const key = getS3KeyFromUrl(fileUrl);
       if(key){

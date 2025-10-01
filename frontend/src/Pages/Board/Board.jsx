@@ -1,50 +1,220 @@
-import React from 'react'
+import React, { useMemo,useState,useEffect } from "react";
+import axios from "axios";
 
 const Board = () => {
-  const [currentPage, setCurrentPage] = React.useState(1);//1번 페이지라 1부터 시작 - 페이지 네이션
-  const [itemsPerPage, setItemsPerPage] = React.useState(10);//페이지당 아이템 수
+  const [posts, setPosts] = useState([]);
+  const [pageSize, setPageSize] = useState(10); //1번 페이지라 1부터 시작 - 페이지 네이션
+  const [currentPage, setCurrentPage] = useState(1); //1번 페이지라 1부터 시작 - 페이지 네이션
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchType, setSearchType] = useState("title");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get("http://localhost:3001/api/post"); //외부에서 볼 수 있어서 token 인증 없앰, credentials 도 필요없음
 
-   const dummyPosts = [
-    { _id: 1, number: 1, title: "첫 번째 게시물", createdAt: "2023-11-01T10:00:00", views: 10 },
-    { _id: 2, number: 2, title: "두 번째 게시물", createdAt: "2023-11-02T11:30:00", views: 20 },
-    { _id: 3, number: 3, title: "세 번째 게시물", createdAt: "2023-11-03T14:00:00", views: 30 },
-    { _id: 4, number: 4, title: "네 번째 게시물", createdAt: "2023-11-04T16:45:00", views: 40 },
-    { _id: 5, number: 5, title: "다섯 번째 게시물", createdAt: "2023-11-05T09:15:00", views: 50 },
-  ];
+        setPosts(response.data);
+      } catch (error) {
+        console.log("게시글 가져오기 실패: ", error);
+      }
+    };
 
-  const indexOfLastPage = currentPage * itemsPerPage; //1페이지당 몇개의 페이지를 보여줄 지 계산함
-  const indexOfFirstPost = indexOfLastPage - itemsPerPage;
-  const currentPosts = dummyPosts.slice(indexOfFirstPost, indexOfLastPage); //현재 페이지에 보여줄 아이템들
+    fetchPosts();
+  }, []);
 
-  return (
-    <div className='p-4 md:p-6 max-w-7xl mx-auto py-32 md:py-32'>
-      <h1 className='text-4xl md:text-5xl font-bold mb-6 md:mb-8 text-center'>업무 게시판</h1>
-      
-      <div className='overflow-x-auto'>
-        <table className='min-w-full bg-white border rounded-lg'>
-          <thead className='bg-gary-50'>
+  //  const dummyPosts = [
+  //   { _id: 1, number: 1, title: "첫 번째 게시물", createdAt: "2023-11-01T10:00:00", views: 10 },
+  //   { _id: 2, number: 2, title: "두 번째 게시물", createdAt: "2023-11-02T11:30:00", views: 20 },
+  //   { _id: 3, number: 3, title: "세 번째 게시물", createdAt: "2023-11-03T14:00:00", views: 30 },
+  //   { _id: 4, number: 4, title: "네 번째 게시물", createdAt: "2023-11-04T16:45:00", views: 40 },
+  //   { _id: 5, number: 5, title: "다섯 번째 게시물", createdAt: "2023-11-05T09:15:00", views: 50 },
+  // ];
+
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      const value = post[searchType]?.toLowerCase() || "";
+      //날짜도 가져올것
+      const matchesSearch = value.includes(searchTerm.toLowerCase());
+
+      const postDate = new Date(post.createdAt).getTime(); //서로 계산해야함
+      const start = startDate? new Date(startDate).getTime() : null;
+      const end = endDate? new Date(endDate).getTime() : null;
+
+      const matchDate = (!start || postDate >= start) && (!end || postDate<=end);
+      return matchesSearch && matchDate;
+    
+    });
+  }, [posts, searchType, searchTerm, startDate, endDate]);
+
+  const totalPages =
+    pageSize > 0 ? Math.ceil(filteredPosts.length / pageSize) : 1; // 올림 계산 //pageSize가 0보다 클 때만 나누기, 0이면 그냥 1페이지로
+
+  const paginatedPosts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredPosts.slice(start, start + pageSize); //몇번째 페이지를 선택했냐에 따라서 달라짐
+  }, [filteredPosts, currentPage, pageSize]);
+
+ return (
+    <div className="p-4 mx-auto max-w-7xl py-32">
+      <h1 className="text-4xl font-bold mb-6 text-center">업무 게시판</h1>
+
+      <div className="mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex w-full md:w-auto gap-2">
+          <select
+            className="border rounded px-3 py-2 text-base"
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value)}
+          >
+            <option value="title">제목</option>
+          </select>
+          <div className="flex-1 md:w-80">
+            <input
+              type="text"
+              placeholder="검색어를 입력하세요"
+              className="w-full border rounded px-3 py-2 text-base"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-bold">작성일 시작:</label>
+            <input
+              type="date"
+              className="border rounded px-3 py-2 w-full md:w-auto"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-bold">작성일 끝:</label>
+            <input
+              type="date"
+              className="border rounded px-3 py-2 w-full md:w-auto"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-bold">페이지당 표시:</label>
+          <select
+            className="border rounded px-3 py-2"
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            {[10, 25, 50, 100].map((size) => (
+              <option key={size} value={size}>{`${size}개`}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-full bg-white border rounded-lg">
+          <thead className="bg-gray-50">
             <tr>
-              <th className='px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-[8%]'>번호</th>
-              <th className='px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-auto'>제목</th>
-              <th className='px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-[15%]'>작성일</th>
-              {/* <th className='px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-[8%]'>첨부파일</th> */}
-              <th className='px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-[8%]'>조회수</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-[8%]">
+                번호
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-auto">
+                제목
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                작성일
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-[8%]">
+                조회수
+              </th>
             </tr>
           </thead>
-          <tbody className='divide-y devied-gary-200'>{currentPosts.map((post)=> (
-          <tr key={post._id} className='hover:bg-gray-50 cursor-pointer'>
-            <td className='px-6 py-4 whitespace-nowrap '>{post.number}</td>
-            <td className='px-6 py-4 whitespace-nowrap '>{post.title}</td>
-            <td className='px-6 py-4 whitespace-nowrap '>{post.createdAt}</td>
-            <td className='px-6 py-4 whitespace-nowrap '>{post.views}</td>
-          </tr>
-        ))}
+          <tbody className="divide-y divide-gray-200">
+            {paginatedPosts.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="4"
+                  className="px-4 py-8 text-center text-gray-500"
+                >
+                  게시글이 없습니다.
+                </td>
+              </tr>
+            ) : (
+              paginatedPosts.map((post, index) => (
+                <tr key={post._id} className="hover:bg-gray-50 cursor-pointer">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(currentPage - 1) * pageSize + index + 1}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {post.title}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {new Date(post.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{post.views}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
-    </div>
-  )
-}
 
-export default Board
+      <div className="md:hidden grid grid-cols-1 gap-4">
+        {paginatedPosts.length === 0 ? (
+          <div className="col-span-full text-center text-gray-500">
+            게시글이 없습니다.
+          </div>
+        ) : (
+          paginatedPosts.map((post, index) => (
+            <div
+              key={post._id}
+              className="border rounded-lg p-4 bg-white shadow-md hover:shadow-lg transition-shadow"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-bold truncate">{post.title}</h3>
+                <span className="text-sm text-gray-500">
+                  #{(currentPage - 1) * pageSize + index + 1}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-3 truncate">
+                작성일: {new Date(post.createdAt).toLocaleDateString()}
+              </p>
+              <p className="text-sm text-gray-600">
+                조회수: {post.views}
+              </p>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="mt-4 flex justify-center space-x-2 text-lg font-bold">
+        <button
+          className="px-3 py-1 rounded border disabled:opacity-50"
+          onClick={() => setCurrentPage((p) => p - 1)}
+          disabled={currentPage === 1 || totalPages === 0}
+        >
+          이전
+        </button>
+        <span className="px-3 py-1">
+          {totalPages > 0 ? `${currentPage} / ${totalPages}` : "0 / 0"}
+        </span>
+        <button
+          className="px-3 py-1 rounded border disabled:opacity-50"
+          onClick={() => setCurrentPage((p) => p + 1)}
+          disabled={currentPage >= totalPages || totalPages === 0}
+        >
+          다음
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Board;
