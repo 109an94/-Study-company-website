@@ -2,7 +2,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
-const router = required("express").Router();
+const router = require("express").Router();
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,

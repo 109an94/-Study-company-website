@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 
 const AdminPosts = () => {
+  const [posts, setPosts] = useState([]);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchType, setSearchType] = useState("title");
+
   const dummyPosts = [
     {
       _id: "1",
@@ -40,31 +46,53 @@ const AdminPosts = () => {
 
       <div className="mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex w-full md:w-auto gap-2">
-          <select className="border rounded px-3 py-2 text-base">
-            <option value="name">제목</option>
-            <option value="email">글 내용</option>
+          <select
+            className="border rounded px-3 py-2 text-base"
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value)}
+          >
+            <option value="title">제목</option>
+            <option value="content">글 내용</option>
           </select>
           <div className="flex-1 md:w-80">
             <input
               type="text"
               placeholder="검색어를 입력하세요"
               className="w-full border rounded px-3 py-2 text-base"
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value)}
             />
+            {/* 실시간 검색시 상태 업데이트 가 되도록 */}
           </div>
         </div>
 
         <a
-          href="#"
+          href="/admin/create-post"
           className="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-center"
         >
           추가하기
         </a>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <div className="text-lg font-bold text-gray-600">총 0개의 게시물</div>
+        <div className="flex items-center space-x-2">
+          <label className="text-base font-bold text-gray-600">
+            페이지당 표시:{" "}
+          </label>
+          <select
+            className="border rounded px-3 py-2"
+            value={pageSize}
+            onChange={(e) =>
+              setPageSize(Number(e.target.value), setCurrentPage(1))
+            }
+          >
+            {[10, 25, 50, 100].map((size) => (
+              <option key={size} value={size}>{`${size}개`}</option>
+            ))}
+          </select>
+        </div>
       </div>
-
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full bg-white shadow-md rounded-lg overflow-hidden text-sm lg:text-lg font-bold">
           <thead className="bg-gray-100">
