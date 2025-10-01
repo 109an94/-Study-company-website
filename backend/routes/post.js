@@ -23,7 +23,7 @@ const authenticateToken = (req, res, next) => {
 };
 
 //post endpoint
-router.post("/", authenticateToken, async (req, res) => {
+router.post("/", /*authenticateToken,*/ async (req, res) => {
   try {
     const { title, content, fileUrl } = req.body;
     const latestPost = await Post.findOne().sort({ number: -1 }); //내림차순으로 정렬, 게시물 번호가 최신인 순으로

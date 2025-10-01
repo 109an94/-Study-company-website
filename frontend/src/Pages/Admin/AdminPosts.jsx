@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import axios from "axios";
 
 const AdminPosts = () => {
   const [posts, setPosts] = useState([]);
@@ -7,38 +8,74 @@ const AdminPosts = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchType, setSearchType] = useState("title");
 
-  const dummyPosts = [
-    {
-      _id: "1",
-      title: "첫 번째 게시글",
-      content: "이것은 첫 번째 게시글 내용입니다.",
-      views: 123,
-      fileUrl: ["https://example.com/file1.pdf"],
-      createdAt: "2023-12-01T12:00:00Z",
-      updatedAt: "2023-12-02T15:30:00Z",
-    },
-    {
-      _id: "2",
-      title: "두 번째 게시글",
-      content: "두 번째 게시글 내용입니다.",
-      views: 456,
-      fileUrl: [
-        "https://example.com/file2.pdf",
-        "https://example.com/file3.pdf",
-      ],
-      createdAt: "2023-12-03T10:00:00Z",
-      updatedAt: "2023-12-03T18:45:00Z",
-    },
-    {
-      _id: "3",
-      title: "세 번째 게시글",
-      content: "세 번째 게시글 내용입니다.",
-      views: 789,
-      fileUrl: [],
-      createdAt: "2023-12-05T09:00:00Z",
-      updatedAt: "2023-12-05T14:30:00Z",
-    },
-  ];
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get("http://localhost:3001/api/post"); //외부에서 볼 수 있어서 token 인증 없앰, credentials 도 필요없음
+
+        setPosts(response.data);
+      } catch (error) {
+        console.log("게시글 가져오기 실패: ", error);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  const getFileNameFromUrl = (url) => {
+    if (!url) return "";
+    if (typeof url !== "string") return ""; //스트링 아니면 빈값 반환
+    const parts = url.split("/"); //슬래시로 나눔
+    return parts[parts.length - 1]; //마지막 부분이 파일 이름
+  };
+
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      const value = post[searchType]?.toLowerCase() || "";
+      return value.includes(searchTerm.toLowerCase());
+    });
+  }, [posts, searchType, searchTerm]);
+
+  const totalPages =
+    pageSize > 0 ? Math.ceil(filteredPosts.length / pageSize) : 1; // 올림 계산 //pageSize가 0보다 클 때만 나누기, 0이면 그냥 1페이지로
+
+  const paginatedPosts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredPosts.slice(start, start + pageSize); //몇번째 페이지를 선택했냐에 따라서 달라짐
+  }, [filteredPosts, currentPage, pageSize]);
+
+  // const dummyPosts = [
+  //   {
+  //     _id: "1",
+  //     title: "첫 번째 게시글",
+  //     content: "이것은 첫 번째 게시글 내용입니다.",
+  //     views: 123,
+  //     fileUrl: ["https://example.com/file1.pdf"],
+  //     createdAt: "2023-12-01T12:00:00Z",
+  //     updatedAt: "2023-12-02T15:30:00Z",
+  //   },
+  //   {
+  //     _id: "2",
+  //     title: "두 번째 게시글",
+  //     content: "두 번째 게시글 내용입니다.",
+  //     views: 456,
+  //     fileUrl: [
+  //       "https://example.com/file2.pdf",
+  //       "https://example.com/file3.pdf",
+  //     ],
+  //     createdAt: "2023-12-03T10:00:00Z",
+  //     updatedAt: "2023-12-03T18:45:00Z",
+  //   },
+  //   {
+  //     _id: "3",
+  //     title: "세 번째 게시글",
+  //     content: "세 번째 게시글 내용입니다.",
+  //     views: 789,
+  //     fileUrl: [],
+  //     createdAt: "2023-12-05T09:00:00Z",
+  //     updatedAt: "2023-12-05T14:30:00Z",
+  //   },
+  // ];
 
   return (
     <div className="p-4 mx-auto max-w-[1700px]">
@@ -59,8 +96,8 @@ const AdminPosts = () => {
               type="text"
               placeholder="검색어를 입력하세요"
               className="w-full border rounded px-3 py-2 text-base"
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             {/* 실시간 검색시 상태 업데이트 가 되도록 */}
           </div>
@@ -94,114 +131,182 @@ const AdminPosts = () => {
         </div>
       </div>
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full bg-white shadow-md rounded-lg overflow-hidden text-sm lg:text-lg font-bold">
+        <table className="w-full bg-white shadow-md rounded-lg overflow-hidden text-sm lg:text-base font-bold">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-3 text-left">번호</th>
-              <th className="px-4 py-3 text-left">제목</th>
-              <th className="px-4 py-3 text-left">내용</th>
-              <th className="px-4 py-3 text-left">조회수</th>
-              <th className="px-4 py-3 text-center">파일</th>
-              <th className="px-4 py-3 text-left">작성일</th>
-              <th className="px-4 py-3 text-left">수정일</th>
-              <th className="px-4 py-3 text-center">관리</th>
+              <th className="px-4 py-3 text-left w-[8%]">번호</th>
+              <th className="px-4 py-3 text-left w-[15%]">제목</th>
+              <th className="px-4 py-3 text-left w-[30%]">내용</th>
+              <th className="px-4 py-3 text-left w-[7%]">조회수</th>
+              <th className="px-4 py-3 text-left w-[10%]">파일</th>
+              <th className="px-4 py-3 text-left w-[12%]">작성일</th>
+              <th className="px-4 py-3 text-left w-[12%]">수정일</th>
+              <th className="px-4 py-3 text-left w-[6%]">관리</th>
             </tr>
           </thead>
           <tbody>
-            {dummyPosts.map((post, index) => (
-              <tr key={post._id} className="border-b">
-                <td className="px-4 py-3">{index + 1}</td>
-                <td className="px-4 py-3 overflow-hidden overflow-ellipsis whitespace-nowrap">
-                  {post.title}
-                </td>
-                <td className="px-4 py-3 overflow-hidden overflow-ellipsis whitespace-nowrap">
-                  {post.content}
-                </td>
-                <td className="px-4 py-3">{post.views}</td>
-                <td className="px-4 py-3 text-center">
-                  {post.fileUrl.length > 0 ? (
-                    post.fileUrl.map((url, index) => (
-                      <button
-                        key={index}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm rounded-md transition-all duration-300 border border-gray-200 hover:border-gray-300 mr-2"
-                      >
-                        파일 {index + 1}
-                      </button>
-                    ))
-                  ) : (
-                    <span className="text-gray-500">없음</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {new Date(post.createdAt).toLocaleString()}
-                </td>
-                <td className="px-4 py-3">
-                  {new Date(post.updatedAt).toLocaleString()}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end space-x-2">
-                    <button className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600">
-                      수정
-                    </button>
-                    <button className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600">
-                      삭제
-                    </button>
-                  </div>
+            {paginatedPosts.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
+                  게시글이 없습니다.
                 </td>
               </tr>
-            ))}
+            ) : (
+              paginatedPosts.map((post, index) => (
+                <tr key={post._id} className="border-b">
+                  <td className="px-4 py-3">
+                    {(currentPage - 1) * pageSize + index + 1}
+                  </td>
+                  <td className="px-4 py-3 overflow-hidden overflow-ellipsis whitespace-nowrap">
+                    {post.title}
+                  </td>
+                  <td className="px-4 py-3 overflow-hidden overflow-ellipsis whitespace-nowrap">
+                    {post.content}
+                  </td>
+                  <td className="px-4 py-3">{post.views}</td>
+                  <td className="px-4 py-3">
+                    {Array.isArray(post.fileUrl) ? (
+                      <div className="flex flex-col gap-1">
+                        {post.fileUrl.map((url, index) => (
+                          <button
+                            key={index}
+                            onClick={() => window.open(url, "_blank")}
+                            className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 text-sm rounded-lg transition-all duration-200 border border-gray-300 shadow-sm hover:shadow w-full mb-1 last:mb-0"
+                          >
+                            {/* s3 버킷에서 다운로드 될 수 있도록 */}
+                            <svg
+                              className="w-4 h-4 mr-2 text-blue-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            <span className="truncate">
+                              {getFileNameFromUrl(url)}
+                            </span>
+                            {/* https://amazon...s3/post-files/"이번달 회계장부.docx" 이 원본 파일 부분만 볼 수 있도록 함 */}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      post.fileUrl && (
+                        <button
+                          onClick={() => window.open(post.fileUrl, "_blank")}
+                          className="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-md transition-colors duration-200 border border-gray-300"
+                        >
+                          {/* 버튼 한개 더 만들기  */}
+                          <svg
+                            className="w-4 h-4 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          {getFileNameFromUrl(post.fileUrl)}
+                        </button>
+                      )
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {new Date(post.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    {new Date(post.updatedAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end space-x-2">
+                      <button className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 whitespace-nowrap writing-normal">
+                        수정
+                      </button>
+                      <button className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 whitespace-nowrap writing-normal">
+                        삭제
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:hidden">
-        {dummyPosts.map((post, index) => (
-          <div
-            key={post._id}
-            className="p-4 border rounded-lg bg-white shadow-md"
-          >
-            <div className="flex justify-between items-cecnter mb-2">
-              <h2 className="text-lg font-bold">{post.title}</h2>
-              <span className="text-gray-500 text-sm">#{index + 1}</span>
-            </div>
-            <p className="text-gray-600 mb-4">{post.content}</p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {post.fileUrl.length > 0 ? (
-                post.fileUrl.map((url, index) => (
-                  <button
-                    key={index}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm rounded-md transition-all duration-300 border border-gray-200 hover:border-gray-300 mr-2"
-                  >
-                    파일 {index + 1}
-                  </button>
-                ))
-              ) : (
-                <span className="text-gray-500">첨부 파일 없음</span>
-              )}
-            </div>
-            <div className="text-sm text-gray-500">
-              <div>조회수: {post.views}</div>
-              <div>작성일: {new Date(post.createdAt).toLocaleString()}</div>
-              <div>수정일: {new Date(post.updatedAt).toLocaleString()}</div>
-            </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <button className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600">
-                수정
-              </button>
-              <button className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600">
-                삭제
-              </button>
-            </div>
+        {paginatedPosts.length === 0 ? (
+          <div className="col-span-full p-8 text-center textd-gray-500 bg-white rounded-lg shadow">
+            게시글이 없습니다.
           </div>
-        ))}
+        ) : (
+          paginatedPosts.map((post, index) => (
+            <div
+              key={post._id}
+              className="p-4 border rounded-lg bg-white shadow-md"
+            >
+              <div className="flex justify-between items-cecnter mb-2">
+                <h2 className="text-lg font-bold">{post.title}</h2>
+                <span className="text-gray-500 text-sm">#{index + 1}</span>
+              </div>
+              <p className="text-gray-600 mb-4">{post.content}</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {post.fileUrl.length > 0 ? (
+                  post.fileUrl.map((url, index) => (
+                    <button
+                      key={index}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm rounded-md transition-all duration-300 border border-gray-200 hover:border-gray-300 mr-2"
+                    >
+                      파일 {index + 1}
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-gray-500">첨부 파일 없음</span>
+                )}
+              </div>
+              <div className="text-sm text-gray-500">
+                <div>조회수: {post.views}</div>
+                <div>작성일: {new Date(post.createdAt).toLocaleString()}</div>
+                <div>수정일: {new Date(post.updatedAt).toLocaleString()}</div>
+              </div>
+              <div className="flex justify-end space-x-2 mt-4">
+                <button className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600">
+                  수정
+                </button>
+                <button className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600">
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="mt-4 flex justify-center space-x-2 text-lg font-bold">
-        <button className="px-3 py-1 rounded border disabled:opacity-50">
+        <button
+          className="px-3 py-1 rounded border disabled:opacity-50"
+          onClick={() => setCurrentPage((p) => p - 1)}
+          disabled={currentPage === 1 || totalPages === 0}
+        >
+          {/* 1이면 버튼을 사용하지 못하도록 */}
           이전
         </button>
-        <span className="px-3 py-1">1 / 1</span>
-        <button className="px-3 py-1 rounded border disabled:opacity-50">
+        <span className="px-3 py-1">
+          {totalPages > 0 ? `${currentPage} / ${totalPages}` : "0 / 0"} 
+        </span>
+        <button
+          className="px-3 py-1 rounded border disabled:opacity-50"
+          onClick={() => setCurrentPage((p) => p + 1)}
+          disabled={currentPage === 1}
+        >
           다음
         </button>
       </div>
